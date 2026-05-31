@@ -1,0 +1,7 @@
+name: SMSML_Workflow_CI_Riski_Alamzah
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    command: "python modelling.py"
