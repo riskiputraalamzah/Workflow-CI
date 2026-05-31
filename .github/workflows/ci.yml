@@ -8,7 +8,7 @@ on:
 
 env:
   MLFLOW_TRACKING_URI: file:${{ github.workspace }}/mlruns
-  DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/smsml-breast-cancer
+  DOCKER_IMAGE_NAME: riskiputraalamzah/smsml-breast-cancer
 
 jobs:
   train-model:
@@ -17,6 +17,25 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate Docker Hub secrets
+        run: |
+          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "DOCKERHUB_USERNAME secret belum diatur."
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "DOCKERHUB_TOKEN secret belum diatur."
+            exit 1
+          fi
+
+          echo "Docker Hub secrets tersedia."
+
+      - name: Show Docker information
+        run: |
+          docker --version
+          docker info
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -64,15 +83,23 @@ jobs:
 
       - name: Get latest run ID
         run: |
+          if [ ! -f MLProject/artifacts/run_id.txt ]; then
+            echo "File MLProject/artifacts/run_id.txt tidak ditemukan."
+            exit 1
+          fi
+
           RUN_ID=$(cat MLProject/artifacts/run_id.txt)
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "Latest run ID: $RUN_ID"
 
       - name: Build Docker image with MLflow
         run: |
+          echo "Building Docker image: ${DOCKER_IMAGE_NAME}:${GITHUB_SHA}"
+
           mlflow models build-docker \
             -m "runs:/${RUN_ID}/model" \
-            -n "${DOCKER_IMAGE_NAME}:${GITHUB_SHA}"
+            -n "${DOCKER_IMAGE_NAME}:${GITHUB_SHA}" \
+            --env-manager=local
 
           docker tag "${DOCKER_IMAGE_NAME}:${GITHUB_SHA}" "${DOCKER_IMAGE_NAME}:latest"
 
@@ -91,7 +118,7 @@ jobs:
         run: |
           mkdir -p docker_info
           echo "Docker Hub image:" > docker_info/docker_hub_image.txt
-          echo "https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/smsml-breast-cancer" >> docker_info/docker_hub_image.txt
+          echo "https://hub.docker.com/r/riskiputraalamzah/smsml-breast-cancer" >> docker_info/docker_hub_image.txt
           echo "" >> docker_info/docker_hub_image.txt
           echo "Image tags:" >> docker_info/docker_hub_image.txt
           echo "${DOCKER_IMAGE_NAME}:${GITHUB_SHA}" >> docker_info/docker_hub_image.txt

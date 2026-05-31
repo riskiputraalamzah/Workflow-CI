@@ -137,6 +137,14 @@ def main():
             artifact_path="model",
             signature=signature,
             input_example=input_example,
+            pip_requirements=[
+                "mlflow==2.19.0",
+                "numpy==1.26.4",
+                "pandas==2.2.3",
+                "scikit-learn==1.5.2",
+                "matplotlib==3.9.2",
+                "joblib==1.4.2",
+            ],
         )
 
         run_id_path = os.path.join(ARTIFACT_DIR, "run_id.txt")
